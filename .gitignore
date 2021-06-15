@@ -1,0 +1,21 @@
+.Rproj.user
+*.Rcheck
+.Rd2pdf*
+*~
+*.Rhistory
+*.Rdata
+*.dta
+*.json
+*.xlsx
+*.json
+#Ignore input and output folders
+input/
+raw/
+data/output
+data/raw
+drafts_slides/
+input
+raw
+drafts_slides
+shapefiles
+shapefiles/
