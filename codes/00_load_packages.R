@@ -16,9 +16,9 @@ list.of.packages <- c("rgdal", "sf", "ggplot2", "data.table", "tidyverse", "read
                       "RColorBrewer", "broom", "sp", "ggthemes", "viridis", "grid", "broom",
                       "viridis", "readstata13", "lubridate", "plm", "haven", "RColorBrewer",
                       "ineq", "writexl", "xlsx", "foreign", "knitr", "stargazer", "glue",
-                      "zoo", "stringi", "magick", "devtools", "Rdpack", "installr", "magrittr", 
+                      "zoo", "stringi", "devtools", "Rdpack", "installr", "magrittr", 
                       "janitor", "ggpmisc", "ipumsr", "survey", "srvyr", "DBI", 
-                      "bigrquery", "here")
+                      "bigrquery", "here", "rnaturalearth")
 
 
 # In the first time running, turn install = TRUE

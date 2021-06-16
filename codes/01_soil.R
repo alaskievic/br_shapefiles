@@ -3,111 +3,20 @@ source("00_load_packages.R")
 
 
 
-############################ 1. Read TRI file ##################################
-
-# Read Terrain Ruggedness Index for the whole plane
-tri <- raster("C:/Users/Andrei/Desktop/ra_nyu/br_shapefiles/ruggedness/data/tri.txt")
-
-# Read 1872 shapefile from Brazil
-mun_1872 <- st_read("C:/Users/Andrei/Desktop/ra_nyu/shared_folders/digitize_brazil/data/raw/shapefiles/municip_1872/malha_municipal_1872.shp")
-
-# Reprojects raster
-crs(tri) <- crs(mun_1872)
-
-# Restrict to Brazilian borders
-tri_masked <- mask(tri, mun_1872)
-
-plot(tri_masked)
-
-
-
-
-############################ 1. Read Rivers from ANA ###########################
-
-# Read all cursos d'agua
-curso <- st_read("C:/Users/Andrei/Desktop/ra_nyu/br_shapefiles/rivers/data/curso_ana/geoft_bho_cursodagua.shp")
-curso_dt <- st_set_geometry(curso, NULL)
-
-
-# Read all rivers (use for merge to obtain names only)
-river <- st_read("C:/Users/Andrei/Desktop/ra_nyu/br_shapefiles/rivers/data/river_ana/geoft_bho_rio.shp")
-river <- st_set_geometry(river, NULL)
-
-
-# We are interesed in cocursodag and nuareabacc to define the main rivers
-# Remove last two digits
-curso %<>% mutate(cod = COCURSODAG) %>% mutate(cod = as.numeric(cod))
-
-river %<>% mutate(cod = CORIO) %>% mutate(cod = substr(cod, 1, nchar(cod)-2)) %>% 
-           mutate(cod = as.numeric(cod))
-
-# First dummy - Rivers of otto level 3
-curso_d3 <- curso %>% filter(cod <= 999)
-
-# Second dummy - Rivers of otto level 4
-curso_d4 <- curso %>% filter(cod <= 9999)
-
-# Third dummy - Rivers with more tha 1.000km2 of nuareabacc (hidrographic contribution)
-curso_d1000 <- curso %>% filter(NUAREABACC >= 1000)
-
-
-curso_d5000 <- curso %>% filter(NUAREABACC >= 5000)
-
-
-# Take a glimpse of names
-curso_d3_names <- inner_join(curso_d3, river, by = "cod")
-curso_d4_names <- inner_join(curso_d4, river, by = "cod")
-curso_d1000_names <- inner_join(curso_d1000, river, by = "cod")
-
-curso_d5000_names <- inner_join(curso_d5000, river, by = "cod")
-
-
-plot(st_geometry(curso_d3_names))
-
-plot(st_geometry(curso_d5000_names))
-
-
-# 1872 municipality borders
-mun_1872 <- st_read("C:/Users/Andrei/Desktop/ra_nyu/br_shapefiles/mun_borders/municip_1872/malha_municipal_1872.shp")
-
-plot(st_geometry(mun_1872))
-
-
-curso_d5000_names <- st_transform(curso_d5000_names, crs = st_crs(mun_1872))
-
-
-river_d5000 <- as_tibble(st_intersection(curso_d5000_names, mun_1872))
-
-
-river_d5000 <- teste %>% distinct(codigo) %>% mutate(river_d5000 = 1)
-
-
-# Merge back with shapefile
-
-river_d5000 <- full_join(mun_1872, river_d5000, by = "codigo")
-
-
-river_d5000 <- st_set_geometry(river_d5000, NULL)
-
-
-
-
-
-
+############### 1. Reads Soil Shapefile from EMBRAPA ###########################
 
 
 # Soil shapefile
-soil_shp <- st_read(here("data","raw","shapefiles", "geo_shapefiles",
-                         "soil_types", "brasil_solos_5m_20201104.shp"))
+soil_shp <- st_read(here("shapefiles","soil","soil_types", "brasil_solos_5m_20201104.shp"))
 
 # 1872 municipality borders
-mun_1872 <- st_read(here("data","raw", "shapefiles", "municip_1872", "malha_municipal_1872.shp"))
+mun_1872 <- st_read(here("shapefiles","mun_borders", "municip_1872", "malha_municipal_1872.shp"))
 
 
 st_crs(soil_shp)
 st_crs(mun_1872)
 
-
+# Assign same coordinate system
 soil_shp <- st_transform(soil_shp, crs = st_crs(mun_1872))
 
 # Calculate total municipality area
@@ -120,10 +29,10 @@ int %<>% mutate(area_km2 = area_m2/1000000)
 # Soil Area for each soiltype
 int$area_soil <- st_area(int$geometry)
 
-
 int %<>% as_tibble() %>% mutate(area_soil = area_soil/1000000)
 
 
+# Plotting
 # plot (soil_shp$geometry, col='green')
 # plot(mun_1872$geometry, add=T)
 # plot(int$geometry, col='red', add=T)
@@ -132,15 +41,12 @@ int %<>% as_tibble() %>% mutate(area_soil = area_soil/1000000)
 # Brazil total area
 test <- int %>% distinct(codigo, .keep_all = TRUE) %>% mutate(tot_area = sum(area_km2))
 
-
 int %<>% group_by(LEG_SINOT) %>% mutate(soil_share = area_soil/area_km2) %>% ungroup()
-
 
 soil_share <- int %>% dplyr::select(Area_km2, ORDEM1, LEG_SINOT, codigo, nome, area_km2, 
                                     area_soil, soil_share)
 
 soil_share %<>% group_by(ORDEM1, codigo) %>% mutate(soil_share_group = sum(soil_share)) %>% ungroup()
-
 
 
 #### Creating final datasets
@@ -178,13 +84,16 @@ soil_final <- full_join(dplyr::select(soil_group_final, c("ORDEM1", "nome", "are
                         dplyr::select(soil_roxa, c("codigo", "share_roxa")),
                         by = "codigo")
 
-# Writing to Stata
-write_dta(soil_share, path = here("data", "output", "soil", "soil_share_r.dta"))
-
 soil_group_wider %<>% rename("AflorRochas" = "AFLORAMENTOS DE ROCHAS")
 
-write_dta(soil_group_wider, path = here("data", "output", "soil", "soil_share_r_wider.dta"))
+# Transform to wider
+soil_group_wider_final <- soil_final %>% 
+  pivot_wider(names_from = ORDEM1, 
+              values_from = soil_share_group)
 
 
-# #join tibble to original county polygon shapefile and export as new shapefile
-# shp_out <- st_write(merge(counties, tb_ArableByCounty, by = 'County_UA'), "ArablebyCounty.shp")
+
+# Saving
+save(soil_group_wider_final, file = here("output", "soil", "soil_share.RData"))
+
+

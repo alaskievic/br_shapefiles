@@ -9,13 +9,7 @@
 *.xlsx
 *.json
 #Ignore input and output folders
-input/
-raw/
-data/output
-data/raw
-drafts_slides/
-input
-raw
-drafts_slides
+papers
+papers/
 shapefiles
 shapefiles/
