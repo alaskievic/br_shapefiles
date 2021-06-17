@@ -12,6 +12,14 @@ tri <- raster(here("shapefiles", "slope", "data", "tri.txt"))
 mun_1872 <- st_read(here("shapefiles","mun_borders", "municip_1872", "malha_municipal_1872.shp"))
 
 
+brazil <- getData("GADM",country="Brazil",level=0)
+
+# Reprojects raster
+crs(tri) <- projection(brazil)
+
+# Restrict to 1872 Brazilian borders
+tri_mask <- mask(tri, brazil)
+
 # Plotting
 plot(tri)
 

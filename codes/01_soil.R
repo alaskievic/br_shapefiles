@@ -5,7 +5,6 @@ source("00_load_packages.R")
 
 ############### 1. Reads Soil Shapefile from EMBRAPA ###########################
 
-
 # Soil shapefile
 soil_shp <- st_read(here("shapefiles","soil","soil_types", "brasil_solos_5m_20201104.shp"))
 
