@@ -4,7 +4,7 @@ source("00_load_packages.R")
 
 ################ 1. Reads Malaria suitability shapefile ########################
 
-# 
+# Reading shapefiles
 malaria_day_pf <- raster(here("shapefiles", "malaria", "data", "2010_TempSuitability.Pf.AnnualInfectiousDays.1k.global_Decompressed_BRA.tiff"))
 malaria_day_pv <- raster(here("shapefiles", "malaria", "data", "2010_TempSuitability.Pv.AnnualInfectiousDays.1k.global_Decompressed_BRA.tiff"))
 malaria_index_pf <- raster(here("shapefiles", "malaria", "data", "2010_TempSuitability.Pf.Index.1k.global_Decompressed_BRA.tiff"))
@@ -19,7 +19,7 @@ mun_1872 <- st_read(here("shapefiles","mun_borders", "municip_1872", "malha_muni
 plot(malaria_day_pf)
 # plot(malaria_index_pf)
 
-# Reprojects raster
+# Reprojects shapefile
 mun_1872 = st_transform(mun_1872, projection(malaria_day_pf))
 
 
