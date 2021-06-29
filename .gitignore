@@ -9,6 +9,7 @@
 *.json
 *.tiff
 *.tif
+*.xls
 #Ignore input and output folders
 papers
 papers/
