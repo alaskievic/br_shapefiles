@@ -16,11 +16,18 @@ veget_dt <- st_set_geometry(veget, NULL)
 # 1872 municipality borders
 mun_1872 <- st_read(here("shapefiles", "mun_borders", "municip_1872", "malha_municipal_1872.shp"))
 
+# 1900 municipality border
+mun_1900 <- st_read(here("shapefiles", "mun_borders", "municip_1900", "malha_municipal_1900.shp"))
+
 
 ### Intersecting with municipalities
 # Assigning corrdinate system
 biomes <- st_transform(biomes, crs = st_crs(mun_1872))
 veget <- st_transform(veget, crs = st_crs(mun_1872))
+
+
+biomes <- st_transform(biomes, crs = st_crs(mun_1900))
+veget <- st_transform(veget, crs = st_crs(mun_1900))
 
 # Fixing invalid geometries
 veget %<>% st_make_valid()
@@ -28,17 +35,23 @@ veget %<>% st_make_valid()
 
 # Plotting
 plot(biomes$geometry)
-plot(mun_1872$geometry)
+plot(mun_1900$geometry)
 # plot(veget$geometry)
 
 
 # Calculate total municipality area and intersecting
 mun_1872$area_m2 <- st_area(mun_1872)
 
-biomes_int <- as_tibble(st_intersection(biomes, mun_1872))
+mun_1900$area_m2 <- st_area(mun_1900)
+
+# biomes_int <- as_tibble(st_intersection(biomes, mun_1872))
+
+biomes_int <- as_tibble(st_intersection(biomes, mun_1900))
 biomes_int %<>% mutate(area_km2 = area_m2/1000000)
 
-veget_int <- as_tibble(st_intersection(veget, mun_1872))
+# veget_int <- as_tibble(st_intersection(veget, mun_1872))
+
+veget_int <- as_tibble(st_intersection(veget, mun_1900))
 veget_int %<>% mutate(area_km2 = area_m2/1000000)
 
 
@@ -103,3 +116,29 @@ biome_veget <- inner_join(atlantic, dplyr::select(veget_wider, -nome), by = "cod
 
 # Saving
 save(biome_veget, file = here("output", "biomes", "biome_veget.RData"))
+
+
+# Only São Paulo
+sp_biome_veget <- biome_veget %<>% filter(substr(codigo, 1, 2) == 35)
+
+colnames(sp_biome_veget) <- c("codigo", "nome", "cerrado", "mata_atlantica",
+                              "caatinga", "pampa", "amazonia", "pantanal", 
+                              "d_atlantic", "area_km2", "corpo_agua", "savana", 
+                              "floresta_semidecidual", "contato",
+                              "formacao_pioneira", "floresta_ombrofila_densa",
+                              "floresta_ombrofila_mista", "savana_estepica",
+                              "estepe", "floresta_decidual",
+                              "floresta_ombrofila_aberta", "campinarana",
+                              "floresta_sempre_verde")
+
+# Percentage of SP in Mata Atlantica
+sp_biome_veget %<>% mutate(area_atlantica = area_km2 * mata_atlantica) %>%
+  mutate_if(is.numeric, as.numeric) %<>% replace(is.na(.), 0) %>% ungroup() %>%
+  mutate(tot_sparea = sum(area_km2)) %>% mutate(tot_atlantic = sum(area_atlantica)) %>%
+  mutate(share_atlantica_tot = tot_atlantic/tot_sparea)
+
+# Save to Stata
+write_dta(sp_biome_veget, path = here("output", "biomes", "sp_biome_veget.dta"))
+
+
+
