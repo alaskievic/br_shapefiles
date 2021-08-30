@@ -170,6 +170,8 @@ amc_1960 <- st_read(here("data","amc", "amc_1960_2010.shp"))
 
 
 
+
+
 ### Intersecting with municipalities
 # Assigning coordinate system
 curso_d3_names <- st_transform(curso_d3_names, crs = st_crs(amc_1960))
@@ -213,7 +215,6 @@ river_d1000 %<>% replace(., is.na(.), 0)
 river_d5000 %<>% replace(., is.na(.), 0)
 
 # Count
-
 river_d3 %>% count(river_d3 == 1)
 river_d4 %>% count(river_d4 == 1)
 river_d1000 %>% count(river_d1000 == 1)
@@ -221,7 +222,6 @@ river_d5000 %>% count(river_d5000 == 1)
 
 
 # Final merge and saving
-
 river_dummy_1960 <- full_join(river_d3, dplyr::select(river_d4, -nome), by = "codigo") %>%
   full_join(., dplyr::select(river_d1000, -nome)    , by = "codigo") %>% 
   full_join(., dplyr::select(river_d5000, -nome)    , by = "codigo")
