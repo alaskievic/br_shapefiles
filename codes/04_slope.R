@@ -30,8 +30,6 @@ terra::writeRaster(tri_mask, filename = here("output", "slope", "tri_br_raw.tif"
 
 
 
-
-
 ### Read Slope for the whole planet
 slope <- terra::rast(here("shapefiles", "slope", "data", "slope.txt"))
 
@@ -164,5 +162,73 @@ tri_slope_br_1872 %<>%
 
 # Saving
 save(tri_slope_br_1872, file = here("output", "slope", "tri_slope_br_1872.RData"))
+
+
+
+####################### 3. Average Altitude ####################################
+
+### Read Altitude file
+altitude <- terra::rast(here("data", "slope", "data", "slope_br", "altitude_br.asc"))
+
+# Get Brazilian Borders
+brazil <- getData("GADM",country="Brazil",level=0)
+brazil <- terra::vect(brazil)
+
+# Reprojects raster
+terra::crs(altitude) <- terra::crs(brazil)
+
+
+# Restrict to Brazilian borders
+altitude_crop <- terra::crop(altitude, brazil)
+
+altitude_mask <- terra::mask(altitude_crop, brazil)
+
+#plot(altitude)
+#plot(altitude_crop)
+#plot(altitude_mask)
+
+
+# 1960-2010 AMCs
+amc_1960 <- st_read(here("data","amc", "amc_1960_2010.shp"))
+
+
+# Reprojects shapefile
+altitude_mask <- raster::raster(altitude_mask)
+
+amc_1960 = st_transform(amc_1960, projection(altitude_mask))
+
+# Restrict to 1960 AMC Brazilian borders
+altitude_br_mask <- mask(altitude_mask, amc_1960)
+
+
+# Extracting Values
+altitude_br_values = raster::extract(x = altitude_mask, y = amc_1960, df = TRUE)
+
+
+
+# Join and calcualte weighted average
+altitude_br <-altitude_br_values %>% group_by(ID) %>%
+  mutate(altitude = mean(altitude_br, na.rm = TRUE)) %>%
+  ungroup()
+
+altitude_br %<>% distinct(ID, .keep_all = TRUE)
+
+altitude_br %<>% dplyr::select(ID, altitude)
+
+
+altitude_br$code2010    <- amc_1960$GEOCODIG_M
+altitude_br$uf_amc      <- amc_1960$UF
+altitude_br$uf_sigla    <- amc_1960$SIGLA
+altitude_br$amc_1960    <- amc_1960$amc_1960_2
+
+
+
+
+altitude_1960 <- altitude_br %>%
+  dplyr::select(code2010, uf_amc, uf_sigla, amc_1960, altitude)
+
+
+# Saving
+save(altitude_1960, file = here("output", "slope", "altitude_1960amc.RData"))
 
 

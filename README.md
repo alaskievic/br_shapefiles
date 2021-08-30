@@ -1,2 +1,2 @@
 # br_shapefiles
-Codes for extracting information from Brazilian municipalities with some historical applications.
+Codes to calculate geo-climatic and socio-economic variables for Brazilian municipalities using GIS methods. Focus on historical applications (1872 municipalities and different AMCs periods).
