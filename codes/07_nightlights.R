@@ -121,7 +121,7 @@ mun_2000 <- read_municipality(year=2000)
 # 2010 municipality borders
 mun_2010 <- read_municipality(year=2010)
 
-# Transforming into terra formar
+# Transforming into terra format
 mun_2000 <- terra::vect(mun_2000)
 mun_2010 <- terra::vect(mun_2010)
 
