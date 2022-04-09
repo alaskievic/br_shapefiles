@@ -110,3 +110,49 @@ colnames(dist_centroid) <- c("dist_coast_centroid", "amc_1960", "nome")
 save(dist_centroid, file = here("output", "distance_coast", "dist_coast_1960amc.RData"))
 
 
+
+
+
+
+
+# 1950 AMCs borders
+amc_1950 <- st_read(here("data","amc", "amc_1950_2010.shp"))
+
+# Calculate centroids (some actual fall outside the mun borders)
+centroid_aux_1950 <- st_centroid(amc_1950)
+
+# st_point_on_surface guarantees that the centroid fall inside the mun borders
+centroid_1950 <- st_point_on_surface(amc_1950)
+
+# Plotting
+plot(amc_1950$geometry)
+plot(centroid_1950, add = TRUE)
+
+# Loading Brazilian coast shapefile
+costa <- st_read(here("data", "linha_costa", "LINHA_DE_COSTA_IMAGEM_GEOCOVER_SIRGAS_2000.shp"))
+
+# Plotting
+plot(costa$geometry)
+
+## Assigning same coordinate
+#  Transform to UTM
+centroid_1950 <- st_transform(centroid_1950, 3055)
+costa <-st_transform(costa, 3055)
+
+# Distance to Centroids
+costa <- st_cast(costa, "MULTILINESTRING")
+
+dist_centroid <- st_distance(costa, centroid_1950)
+
+
+# Create a data.frame with the distance and the coordinates of the points
+dist_centroid <- tibble(dist_centroid = as.vector(dist_centroid)/1000,
+                        centroid_1950$amc_1950_2, centroid_1950$NOME_MUNIC)
+
+colnames(dist_centroid) <- c("dist_coast_centroid", "amc_1950", "nome")
+
+
+# Saving
+save(dist_centroid, file = here("output", "distance_coast", "dist_coast_1950amc.RData"))
+
+

@@ -2,15 +2,13 @@
 source("00_load_packages.R")
 
 
-
 ############### 1. Reads Soil Shapefile from EMBRAPA ###########################
 
 # Soil shapefile
-soil_shp <- st_read(here("shapefiles","soil","soil_types", "brasil_solos_5m_20201104.shp"))
+soil_shp <- st_read(here("data", "soil", "soil_types", "brasil_solos_5m_20201104.shp"))
 
 # 1872 municipality borders
-mun_1872 <- st_read(here("shapefiles","mun_borders", "municip_1872", "malha_municipal_1872.shp"))
-
+mun_1872 <- st_read(here("data", "mun_borders", "municip_1872", "malha_municipal_1872.shp"))
 
 st_crs(soil_shp)
 st_crs(mun_1872)
@@ -66,22 +64,57 @@ soil_group_wider <- soil_group_final %>%
 soil_roxa <- soil_share %>%
   dplyr::select(ORDEM1, LEG_SINOT, codigo, nome, area_km2, soil_share)
 
-soil_roxa %<>% filter(LEG_SINOT == "LVd - Latossolos Vermelhos Distroficos"|
-                      LEG_SINOT == "LVdf - Latossolos Vermelhos Distroferricos"|
-                      LEG_SINOT == "LVe - Latossolos Vermelhos Eutroficos"|
-                      LEG_SINOT == "LVef - Latossolos Vermelhos Eutroferricoss")
 
-soil_roxa %<>% group_by(codigo) %>% mutate(share_roxa = sum(soil_share)) %>%
+soil_roxa_1 <- soil_roxa %>%
+  filter(LEG_SINOT == "LVd  - Latossolos Vermelhos Distroficos"|
+           LEG_SINOT == "LVdf - Latossolos Vermelhos Distroferricos"|
+           LEG_SINOT == "LVe  - Latossolos Vermelhos Eutroficos"|
+           LEG_SINOT == "LVef - Latossolos Vermelhos Eutroferricoss")
+
+soil_roxa_2 <- soil_roxa %>%
+  filter(LEG_SINOT == "LVd  - Latossolos Vermelhos Distroficos"|
+           LEG_SINOT == "LVdf - Latossolos Vermelhos Distroferricos"|
+           LEG_SINOT == "LVe  - Latossolos Vermelhos Eutroficos"|
+           LEG_SINOT == "LVef - Latossolos Vermelhos Eutroferricoss"|
+           LEG_SINOT == "NVd - Nitossolos Vermelhos Distroficos"|
+           LEG_SINOT == "NVe - Nitossolos Vermelhos Eutroficos")
+
+soil_roxa_complete <- soil_roxa %>%
+  filter(LEG_SINOT == "LVd  - Latossolos Vermelhos Distroficos"|
+         LEG_SINOT == "LVdf - Latossolos Vermelhos Distroferricos"|
+         LEG_SINOT == "LVe  - Latossolos Vermelhos Eutroficos"|
+         LEG_SINOT == "LVef - Latossolos Vermelhos Eutroferricoss"|
+         LEG_SINOT == "NVd - Nitossolos Vermelhos Distroficos"|
+         LEG_SINOT == "NVe - Nitossolos Vermelhos Eutroficos"|
+         LEG_SINOT == "PVd - Argissolos Vermelhos Distroficos"|
+         LEG_SINOT == "PVe - Argissolos Vermelhos Eutroficos")
+
+soil_roxa_1 %<>% group_by(codigo) %>% mutate(share_roxa_lato = sum(soil_share)) %>%
   ungroup()
 
-soil_roxa %<>% distinct(codigo, .keep_all = TRUE)
+soil_roxa_1 %<>% distinct(codigo, .keep_all = TRUE)
+
+
+soil_roxa_2 %<>% group_by(codigo) %>% mutate(share_roxa_lato_nito = sum(soil_share)) %>%
+  ungroup()
+
+soil_roxa_2 %<>% distinct(codigo, .keep_all = TRUE)
+
+
+soil_roxa_complete %<>% group_by(codigo) %>% mutate(share_roxa_all_red = sum(soil_share)) %>%
+  ungroup()
+
+soil_roxa_complete %<>% distinct(codigo, .keep_all = TRUE)
 
 
 # Joining
 soil_final <- full_join(dplyr::select(soil_group_final, c("ORDEM1", "nome", "area_km2",
                                                           "codigo", "soil_share_group")),
-                        dplyr::select(soil_roxa, c("codigo", "share_roxa")),
-                        by = "codigo")
+                        dplyr::select(soil_roxa_1, c("codigo", "share_roxa_lato")),
+                        by = "codigo") %>%
+  full_join(., dplyr::select(soil_roxa_2, c("codigo", "share_roxa_lato_nito")), by = "codigo") %>%
+  full_join(., dplyr::select(soil_roxa_complete, c("codigo", "share_roxa_all_red")), by = "codigo")
+                  
 
 soil_group_wider %<>% rename("AflorRochas" = "AFLORAMENTOS DE ROCHAS")
 

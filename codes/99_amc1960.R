@@ -2,35 +2,35 @@
 source("00_load_packages.R")
 
 
-########### 1. Calculating Some Geographical Variables (1960 AMCs) #############
+########### 1. Calculating Some Geographical Variables (1950 AMCs) #############
 
 
 ########### 1.1 Total Area #############
 
-# 1960 AMCs borders
-amc_1960 <- st_read(here("data","amc", "amc_1960_2010.shp"))
+# 1950 AMCs borders
+amc_1950 <- st_read(here("data","amc", "amc_1950_2010.shp"))
 
-amc_1960$area_m2 <- st_area(amc_1960)
-amc_1960 %<>% mutate(area_km2 = area_m2/1000000)
+amc_1950$area_m2 <- st_area(amc_1950)
+amc_1950 %<>% mutate(area_km2 = area_m2/1000000)
 
-amc_1960 %<>% dplyr::select(c("GEOCODIG_M", "UF", "SIGLA", "NOME_MUNIC",
-                              "amc_1960_2", "area_km2"))
+amc_1950 %<>% dplyr::select(c("GEOCODIG_M", "UF", "SIGLA", "NOME_MUNIC",
+                              "amc_1950_2", "area_km2"))
 
-colnames(amc_1960) <- c("code2010", "uf_amc", "uf_sigla", "name_mun", "amc_1960", 
+colnames(amc_1950) <- c("code2010", "uf_amc", "uf_sigla", "name_mun", "amc_1950", 
                         "area_km2", "geometry")
 
 ########### 1.2 Latitude and Longitude of Centroids #############
 
 # st_point_on_surface guarantees that the centroid fall inside the AMC borders
-amc_1960$coord <- st_coordinates(st_point_on_surface(amc_1960$geometry))
+amc_1950$coord <- st_coordinates(st_point_on_surface(amc_1950$geometry))
 
-amc_1960$longitude <- amc_1960$coord[, 1]
-amc_1960$latitude <- amc_1960$coord[, 2]
+amc_1950$longitude <- amc_1950$coord[, 1]
+amc_1950$latitude <- amc_1950$coord[, 2]
 
 
-amc_1960 <- st_set_geometry(amc_1960, NULL) %>% as_tibble()
+amc_1950 <- st_set_geometry(amc_1950, NULL) %>% as_tibble()
 
-amc_1960 %<>% mutate(amc_1960 = as.integer(amc_1960))
+amc_1950 %<>% mutate(amc_1950 = as.integer(amc_1950))
 
 
 
@@ -44,20 +44,20 @@ colnames(daniel) <- c("code2010", "uf_daniel", "year", "v_rain", "v_temp")
 
 ### Merge with AMCs and collapse
 
-# Get 1960-2000 AMC Crosswalk
-cross_1960 <- read_dta(file = here("data", "amc", "crosswalk", "_Crosswalk_final_1960_2000.dta")) %>%
-  dplyr::select(uf_amc, final_name, amc, code2010) %>% rename("amc_1960" = "amc") %>%
+# Get 1950-2000 AMC Crosswalk
+cross_1950 <- read_dta(file = here("data", "amc", "crosswalk", "_Crosswalk_final_1950_2000.dta")) %>%
+  dplyr::select(uf_amc, final_name, amc, code2010) %>% rename("amc_1950" = "amc") %>%
   mutate(code2010 = str_sub(code2010, 1, -2)) %>% mutate(code2010 = as.integer(code2010))
 
 
-daniel_aux <- full_join(daniel, cross_1960, by = "code2010")
+daniel_aux <- full_join(daniel, cross_1950, by = "code2010")
 
-daniel_aux %<>% group_by(amc_1960, year) %>%
+daniel_aux %<>% group_by(amc_1950, year) %>%
   summarise(temp_mean = mean(v_temp, na.rm = TRUE), rain_mean = mean(v_rain, na.rm = TRUE)) %>%
   ungroup()
 
 # Mean over years
-amc_climate <- daniel_aux %>% group_by(amc_1960) %>%
+amc_climate <- daniel_aux %>% group_by(amc_1950) %>%
   summarise(temp_mean = mean(temp_mean, na.rm = TRUE), rain_mean = mean(rain_mean, na.rm = TRUE)) %>%
   ungroup()
 
@@ -100,47 +100,53 @@ mun_pop_lon %<>% janitor::clean_names()
 
 ### Merge with AMCs and collapse
 
-# Get 1960-2000 AMC Crosswalk
-cross_1960 <- read_dta(file = here("data", "amc", "crosswalk", "_Crosswalk_final_1960_2000.dta")) %>%
-  dplyr::select(uf_amc, final_name, amc, code2010) %>% rename("amc_1960" = "amc") %>%
+# Get 1950-2000 AMC Crosswalk
+cross_1950 <- read_dta(file = here("data", "amc", "crosswalk", "_Crosswalk_final_1950_2000.dta")) %>%
+  dplyr::select(uf_amc, final_name, amc, code2010) %>% rename("amc_1950" = "amc") %>%
    mutate(code2010 = as.integer(code2010))
 
 
-pop_amc1960 <- full_join(mun_pop_lon, cross_1960, by = "code2010")
+pop_amc1950 <- full_join(mun_pop_lon, cross_1950, by = "code2010")
 
-pop_amc1960 %<>% group_by(amc_1960, year) %>%
+pop_amc1950 %<>% group_by(amc_1950, year) %>%
   summarise(pop_tot = sum(pop_tot), pop_urb = sum(pop_urb), pop_rur = sum(pop_rur)) %>%
   ungroup() %>% mutate(year = as.integer(year))
 
 
-save(pop_amc1960, file = here("output", "mun_data", "pop_amc1960.RData"))
+save(pop_amc1950, file = here("output", "mun_data", "pop_amc1950.RData"))
 
 
 
 ######################### 2. Merging all datasets ##############################
-load(here("output", "mun_data", "pop_amc1960.RData"))
+load(here("output", "mun_data", "pop_amc1950.RData"))
 load(here("output", "slope", "altitude_1960amc.RData"))
-load(here("output", "distance_coast", "dist_coast_1960amc.RData"))
+load(here("output", "distance_coast", "dist_coast_1950amc.RData"))
+
+
+altitude_1960 %<>% rename(amc_1950 = amc_1960)
 
 # Voltando atrás xisde
-pop_amc_wider <- pivot_wider(pop_amc1960, values_from = c("pop_tot", "pop_urb", "pop_rur"), 
+pop_amc_wider <- pivot_wider(pop_amc1950, values_from = c("pop_tot", "pop_urb", "pop_rur"), 
                              names_from = "year")
 
 
-altitude_1960 %<>% mutate(amc_1960 = as.integer(amc_1960))
-dist_centroid %<>% mutate(amc_1960 = as.integer(amc_1960))
+altitude_1960 %<>% mutate(amc_1950 = as.integer(amc_1950))
+dist_centroid %<>% mutate(amc_1950 = as.integer(amc_1950))
 
 
-amc_final <- full_join(amc_1960, amc_climate, by = "amc_1960") %>%
-             full_join(., altitude_1960, by = "amc_1960") %>%
-             full_join(., dist_centroid, by = "amc_1960") %>%
-             full_join(., pop_amc_wider, by = "amc_1960")
+amc_final <- full_join(amc_1950, amc_climate, by = "amc_1950") %>%
+             full_join(., altitude_1960, by = "amc_1950") %>%
+             full_join(., dist_centroid, by = "amc_1950") %>%
+             full_join(., pop_amc_wider, by = "amc_1950")
 
 amc_final %<>% dplyr::select(-c("code2010.x", "uf_amc.x", "uf_sigla.x",
                                 "code2010.y", "uf_amc.y", "uf_sigla.y"))
 
 
-write_dta(amc_final, path = here("output", "amc", "amc1960_geo.dta"))
+# Take out altitude missing
+amc_final %<>% filter(is.na(name_mun) == FALSE)
+
+write_dta(amc_final, path = here("output", "amc", "amc1950_geo.dta"))
 
 
 
@@ -148,12 +154,12 @@ write_dta(amc_final, path = here("output", "amc", "amc1960_geo.dta"))
 ############################## 3. Some Maps ####################################
 
 ### 1960 AMCs borders
-amc_1960 <- st_read(here("data","amc", "amc_1960_2010.shp"))
+amc_1950 <- st_read(here("data","amc", "amc_1950_2010.shp"))
 
-amc_1960$coord <- st_coordinates(st_point_on_surface(amc_1960$geometry))
+amc_1950$coord <- st_coordinates(st_point_on_surface(amc_1950$geometry))
 
 
-amc_border_1960 <- tm_shape(amc_1960) +
+amc_border_1950 <- tm_shape(amc_1950) +
   tm_borders(lwd = 1.5, col = "black", alpha = .5) +
   tm_layout(legend.text.size=1.25,
             legend.title.size=1.55,
@@ -164,10 +170,10 @@ amc_border_1960 <- tm_shape(amc_1960) +
   tm_scale_bar(position = c("right", "bottom"), text.size = 1)
 
 
-amc_border_1960
+amc_border_1950
 
 # Saving
-tmap_save(amc_border_1960, here("output", "amc", "amc_border_1960.png"))
+tmap_save(amc_border_1950, here("output", "amc", "amc_border_1960.png"))
 
 
 amc_centroid_1960 <- tm_shape(amc_1960) +
@@ -391,4 +397,84 @@ ggsave(filename = "rcredit_percent.png", plot = rcredit_percent, path = here("ou
 
 
 
+##################### 5. Agricultural Modernization Graphs #####################
+
+
+
+### Number of Tractors 1950 AMCs ###
+
+# Read dta with BB presence
+bb_1950 <- read_dta(here("output", "amc", "agri_bb_amc_pre_full_clean.dta"))
+
+
+bb_1950 %<>% dplyr::select(amc, year, tract_num, machine_num, machine_num_complete)
+
+bb_1950 %<>% group_by(year) %>% summarize(tract_num = sum(tract_num),
+                                          machine_num = sum(machine_num), 
+                                          machine_num_complete = sum(machine_num_complete))
+
+
+
+tract_map <- ggplot(bb_1950, aes(x=year)) +
+  geom_line(data = bb_1950, aes(y=tract_num), lwd = 1)+
+  geom_point(data = bb_1950, aes(x=year, y=tract_num), size=2)+
+  labs(x = "Year", y = "Number of Tractors") +
+  ggtitle("Number of Tractors in Farms (Agricultural Census)") +
+  theme_bw(base_size = 16) +
+  theme(legend.text=element_text(size=14), legend.position = c(0.80, 0.6), 
+        legend.box.background = element_blank(), legend.title = element_blank())
+
+tract_map
+
+ggsave(filename = "tract_num.png", plot = tract_map, path = here("output", "amc"))
+
+
+
+machine_map <- ggplot(bb_1950, aes(x=year)) +
+  geom_line(data = bb_1950, aes(y=machine_num_complete), lwd = 1)+
+  geom_point(data = bb_1950, aes(x=year, y=machine_num_complete), size=2)+
+  labs(x = "Year", y = "Number of Tractors") +
+  ggtitle("Number of Tractors in Farms (Agricultural Census)") +
+  theme_bw(base_size = 16) +
+  theme(legend.text=element_text(size=14), legend.position = c(0.80, 0.6), 
+        legend.box.background = element_blank(), legend.title = element_blank())
+
+machine_map
+
+
+
+
+
+
+
+
+
+# Read dta with BB presence
+bb_1960 <- read_dta(here("output", "amc", "agri_bb_amc_clean.dta"))
+
+
+
+bb_1960 %<>% dplyr::select(amc, year, num_tot, num_fert_chem, num_cal)
+
+bb_1960 %<>% group_by(year) %>% summarize(num_tot = sum(num_tot),
+                                          num_fert_chem = sum(num_fert_chem), 
+                                          num_cal = sum( num_cal))
+
+bb_1960 %<>% mutate(share_chem = num_fert_chem/num_tot,
+                    share_cal = num_cal/num_tot)
+
+
+
+share_chem_map <- ggplot(bb_1960, aes(x=year)) +
+  geom_line(data = bb_1960, aes(y=share_chem), lwd = 1)+
+  geom_point(data = bb_1960, aes(x=year, y=share_chem), size=2)+
+  labs(x = "Year", y = "Share of Farms Using Chemical Fertilizers") +
+  ggtitle("Use of Chemical Fertilizers in Farms") +
+  theme_bw(base_size = 16) +
+  theme(legend.text=element_text(size=14), legend.position = c(0.80, 0.6), 
+        legend.box.background = element_blank(), legend.title = element_blank())
+
+share_chem_map
+
+ggsave(filename = "share_chem.png", plot = share_chem_map, path = here("output", "amc"))
 
