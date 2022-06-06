@@ -15,5 +15,7 @@ papers
 papers/
 shapefiles
 shapefiles/
-data
-data/
+raw
+raw/
+output
+output/

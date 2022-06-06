@@ -10,13 +10,13 @@ options(stringsAsFactors = FALSE)
 if (!require("pacman")) install.packages("pacman")
 
 list.of.packages <- c("rgdal", "sf", "ggplot2", "data.table", "tidyverse", "readxl", 
-                      "tmap", "fabricatr", "raster", "rgeos", "mapview", "leaflet",
-                      "RColorBrewer", "broom", "sp", "ggthemes", "viridis", "grid", "broom",
-                      "viridis", "readstata13", "lubridate", "plm", "haven", "RColorBrewer",
-                      "ineq", "writexl", "xlsx", "foreign", "knitr", "stargazer", "glue",
+                      "tmap", "fabricatr", "raster", "rgeos",
+                      "RColorBrewer", "broom", "sp", "viridis", "grid", "broom",
+                      "viridis", "lubridate", "plm", "haven", "RColorBrewer",
+                      "foreign", "knitr", "stargazer", "glue",
                       "zoo", "stringi", "devtools", "Rdpack", "installr", "magrittr", 
                       "janitor", "ggpmisc", "ipumsr", "survey", "srvyr", "DBI", 
-                      "bigrquery", "here", "terra", "geobr", "crul")
+                      "bigrquery", "here", "terra", "crul")
 
 
 # In the first time running, turn install = TRUE
