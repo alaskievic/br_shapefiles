@@ -11,6 +11,7 @@
 *.tif
 *.xls
 *.DS_store
+*.DS_Store
 #Ignore input and output folders
 papers
 papers/
