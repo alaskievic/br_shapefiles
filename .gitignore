@@ -10,6 +10,7 @@
 *.tiff
 *.tif
 *.xls
+*.DS_store
 #Ignore input and output folders
 papers
 papers/
