@@ -154,68 +154,40 @@ plot(erosion_mask)
 terra::writeRaster(erosion_mask, filename = here("data", "output", "soil",
                                                     "soil_erosion_raw.tif"))
 
-# Reloading
-erosion_mask <- raster::raster(here("data", "output", "soil",
-                                    "soil_erosion_raw.tif"))
-
-# 1872 municipality borders
-mun_1872 <- st_read(here("data", "raw", "mun_borders", "municip_1872",
-                         "05-malha municipal 1872.shp"))
-
-
-# First, to a SpatialPointsDataFrame
-erosion_pts <- rasterToPoints(erosion_mask, spatial = TRUE)
-erosion_df  <- data.frame(erosion_pts)
-rm(erosion_pts, erosion_mask)
-
-
-teste <- full_join(night_2000_df, night_2010_df, by = c("x", "y"))
-
-teste %<>% mutate(diff_lights = nightlights_2010_br_raw - nightlights_2000_br_raw)
-
-ggplot() +
-  geom_raster(data = night_2010_df , aes(x = x, y = y, fill = nightlights_2010_br_raw)) +
-  geom_sf(data = state_2000, fill = NA) +
-  ggtitle("2010 Night Lights") +
-  labs(fill = "Night Light Intensity") +
-  theme(axis.title = element_blank(), legend.title=element_text(size=16), 
-        plot.title = element_text(size=16)) 
-
-
-
-ggplot() +
-  geom_raster(data = teste , aes(x = x, y = y, fill = diff_lights)) +
-  geom_sf(data = state_2000, fill = NA) +
-  ggtitle("Change in Night Lights") +
-  labs(fill = "Change in Night Light Intensity (2000-2010)") +
-  theme(axis.title = element_blank(), legend.title=element_text(size=16), 
-        plot.title = element_text(size=16)) 
-
 
 ### Mean value inside each municipality
 rm(list = ls())
 
-erosion_mask <- raster::raster(here("data", "output", "soil",
+erosion_mask <- terra::rast(here("data", "output", "soil",
                                     "soil_erosion_raw.tif"))
 
 # 1872 municipality borders
 mun_1872 <- st_read(here("data", "raw", "mun_borders", "municip_1872",
                          "05-malha municipal 1872.shp"))
 
+
 # Transforming into terra format
 mun_1872 <- terra::vect(mun_1872)
 
-# Reprojects raster
+# Reproject raster
 terra::crs(mun_1872) <- terra::crs(erosion_mask)
+
+
+plot(erosion_mask)
+plot(mun_1872, add = TRUE)
+
+mun_1872 <- project(mun_1872, crs(erosion_mask))
 
 erosion_avg <- terra::extract(erosion_mask, mun_1872, fun = mean, na.rm = TRUE)
 
-night_2000_avg %<>% mutate(cod = mun_2000$code_muni) %>% 
-  mutate(mun_name = mun_2000$name_muni) %>% dplyr::select(-ID)
 
 colnames(night_2000_avg) <- c("light_2000", "cod", "mun_name_2000")
 
 
 
+erosion_avg <- raster::extract(erosion_mask, mun_1872, fun = mean, na.rm = TRUE, 
+                               df=TRUE)
 
+
+teste <- terra::as.data.frame(erosion_mask)
 
